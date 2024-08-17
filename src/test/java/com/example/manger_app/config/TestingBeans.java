@@ -5,9 +5,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
 import org.springframework.web.client.RestClient;
+
+import java.net.http.HttpClient;
 
 import static org.mockito.Mockito.mock;
 
@@ -27,8 +30,11 @@ public class TestingBeans {
     @Primary
     public RestClientProductsRestClient restClientProductsRestClient(
             @Value("${services.catalogue.uri:http://localhost:54321}") String catalogueBaseUri) {
+        var client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
+
         return new RestClientProductsRestClient(RestClient.builder()
                 .baseUrl(catalogueBaseUri)
+                .requestFactory(new JdkClientHttpRequestFactory(client))
                 .build());
     }
 }

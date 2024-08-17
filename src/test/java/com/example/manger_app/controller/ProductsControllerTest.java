@@ -9,13 +9,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ui.ConcurrentModel;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -26,6 +26,34 @@ class ProductsControllerTest {
 
     @InjectMocks
     ProductsController controller;
+
+    @Test
+    @DisplayName("getProductsList вернет страницу списка отфильтрованных товаров")
+    void getProductsList_ReturnsListOfProductsPage() {
+        var model = new ConcurrentModel();
+        var filter = "товар";
+
+        var products = IntStream.range(1, 4)
+                .mapToObj(i -> new Product(i, "Товар №%s".formatted(i),
+                        "Описание товара №%s".formatted(i)))
+                .toList();
+
+        doReturn(products).when(productsRestClient).findAllProducts(filter);
+
+        var result = controller.getProductsList(model, filter);
+
+        assertEquals("catalogue/products/list", result);
+        assertEquals(products, model.getAttribute("products"));
+        assertEquals(filter, model.getAttribute("filter"));
+    }
+
+    @Test
+    @DisplayName("getNewProductPage вернет страницу нового товара")
+    void getNewProductPage_ReturnsNewProductPage() {
+        var result = controller.getNewProductPage();
+
+        assertEquals("catalogue/products/new_product", result);
+    }
 
     @Test
     @DisplayName("createProduct создаст новый товар и перенаправит на страницу товара")
