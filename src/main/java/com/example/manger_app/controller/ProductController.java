@@ -41,11 +41,13 @@ public class ProductController {
     @PostMapping("edit")
     public String updateProduct(@ModelAttribute(value = "product", binding = false) Product product,
                                 UpdateProductPayload payload,
-                                Model model) {
+                                Model model,
+                                HttpServletResponse response) {
         try {
             productsRestClient.updateProduct(product.id(), payload.title(), payload.details());
             return "redirect:/catalogue/products/%d".formatted(product.id());
         } catch (BadRequestException exception) {
+            response.setStatus(HttpStatus.BAD_REQUEST.value());
             model.addAttribute("payload", payload);
             model.addAttribute("errors", exception.getErrors());
             return "catalogue/products/edit";
@@ -62,7 +64,8 @@ public class ProductController {
     public String handleNoSuchElementException(NoSuchElementException exception, Model model,
                                                HttpServletResponse response, Locale locale) {
         response.setStatus(HttpStatus.NOT_FOUND.value());
-        model.addAttribute("error", messageSource.getMessage(exception.getMessage(), new Object[0],
+        model.addAttribute("error",
+                messageSource.getMessage(exception.getMessage(), new Object[0],
                 exception.getMessage(), locale));
         return "errors/404";
     }

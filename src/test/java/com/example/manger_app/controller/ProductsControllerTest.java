@@ -10,6 +10,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.ui.ConcurrentModel;
 
 import java.util.List;
@@ -60,12 +62,13 @@ class ProductsControllerTest {
     void createProduct_RequestIsValid_ReturnsRedirectionToProductPage() {
         var payload = new NewProductPayload("Новый товар", "Описание нового товара");
         var model = new ConcurrentModel();
+        var response = new MockHttpServletResponse();
 
         doReturn(new Product(1, "Новый товар", "Описание нового товара"))
                 .when(productsRestClient)
                 .createProduct("Новый товар", "Описание нового товара");
 
-        var result = controller.createProduct(payload, model);
+        var result = controller.createProduct(payload, model, response);
 
         assertEquals("redirect:/catalogue/products/1", result);
 
@@ -78,16 +81,18 @@ class ProductsControllerTest {
     void createProduct_RequestIsInValid_ReturnsProductFormWithErrors() {
         var payload = new NewProductPayload(" ", null);
         var model = new ConcurrentModel();
+        var response = new MockHttpServletResponse();
 
         doThrow(new BadRequestException(List.of("Ошибка 1", "Ошибка 2")))
                 .when(productsRestClient)
                 .createProduct(" ", null);
 
-        var result = controller.createProduct(payload, model);
+        var result = controller.createProduct(payload, model, response);
 
         assertEquals("catalogue/products/new_product", result);
         assertEquals(payload, model.getAttribute("payload"));
         assertEquals(List.of("Ошибка 1", "Ошибка 2"), model.getAttribute("errors"));
+        assertEquals(HttpStatus.BAD_REQUEST.value(), response.getStatus());
 
         verify(productsRestClient).createProduct(" ", null);
         verifyNoMoreInteractions(productsRestClient);

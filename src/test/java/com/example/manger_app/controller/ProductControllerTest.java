@@ -10,9 +10,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.ui.ConcurrentModel;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -80,8 +83,9 @@ public class ProductControllerTest {
         var payload = new UpdateProductPayload("Товар 1 обновленный",
                 "Описание товара 1 обновленное");
         var model = new ConcurrentModel();
+        var response = new MockHttpServletResponse();
 
-        var result = productController.updateProduct(product, payload, model);
+        var result = productController.updateProduct(product, payload, model, response);
 
         assertEquals("redirect:/catalogue/products/1", result);
 
@@ -95,18 +99,49 @@ public class ProductControllerTest {
         var product = new Product(1, "Товар 1", "Описание товара 1");
         var payload = new UpdateProductPayload(" ", null);
         var model = new ConcurrentModel();
+        var response = new MockHttpServletResponse();
 
         doThrow(new BadRequestException(List.of("Ошибка 1", "Ошибка 2")))
                 .when(productsRestClient)
                 .updateProduct(1, " ", null);
 
-        var result = productController.updateProduct(product, payload, model);
+        var result = productController.updateProduct(product, payload, model, response);
 
         assertEquals("catalogue/products/edit", result);
         assertEquals(payload, model.getAttribute("payload"));
         assertEquals(List.of("Ошибка 1", "Ошибка 2"), model.getAttribute("errors"));
+        assertEquals(HttpStatus.BAD_REQUEST.value(), response.getStatus());
 
         verify(productsRestClient).updateProduct(1, " ", null);
         verifyNoMoreInteractions(productsRestClient);
+    }
+
+    @Test
+    void deleteProduct_RedirectsToProductsListPage() {
+        var product = new Product(1, "Товар 1", "Описание товара 1");
+
+        var result = productController.deleteProduct(product);
+
+        assertEquals("redirect:/catalogue/products/list", result);
+
+        verify(productsRestClient).deleteProduct(1);
+        verifyNoMoreInteractions(productsRestClient);
+    }
+
+    @Test
+    void handleNoSuchElementException_Returns404ErrorPage() {
+        var exception = new NoSuchElementException("error");
+        var model = new ConcurrentModel();
+        var response = new MockHttpServletResponse();
+        var locale = Locale.of("ru");
+
+        var result = this.productController.handleNoSuchElementException(exception, model, response, locale);
+
+        assertEquals("errors/404",  result);
+        assertEquals(HttpStatus.NOT_FOUND.value(), response.getStatus());
+
+        verify(this.messageSource).getMessage("error", new Object[0], "error", Locale.of("ru"));
+        verifyNoMoreInteractions(this.messageSource);
+        verifyNoInteractions(this.productsRestClient);
     }
 }
