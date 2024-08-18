@@ -39,7 +39,7 @@ public class ProductController {
     }
 
     @PostMapping("edit")
-    public String updateProduct(@ModelAttribute(value = "product", binding = false) Product product,
+    public String updateProduct(@ModelAttribute(name = "product", binding = false) Product product,
                                 UpdateProductPayload payload,
                                 Model model,
                                 HttpServletResponse response) {

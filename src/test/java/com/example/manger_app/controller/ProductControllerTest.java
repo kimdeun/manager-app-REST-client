@@ -135,9 +135,9 @@ public class ProductControllerTest {
         var response = new MockHttpServletResponse();
         var locale = Locale.of("ru");
 
-        var result = this.productController.handleNoSuchElementException(exception, model, response, locale);
+        var result = productController.handleNoSuchElementException(exception, model, response, locale);
 
-        assertEquals("errors/404",  result);
+        assertEquals("errors/404", result);
         assertEquals(HttpStatus.NOT_FOUND.value(), response.getStatus());
 
         verify(this.messageSource).getMessage("error", new Object[0], "error", Locale.of("ru"));
